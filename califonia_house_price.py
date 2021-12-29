@@ -16,3 +16,11 @@ def fetch_housing_data(housing_url=HOUSING_URL, housing_path=HOUSING_PATH):
     housing_tgz = tarfile.open(tgz_path)
     housing_tgz.extractall(path=housing_path)
     housing_tgz.close()
+
+import pandas as pd
+def load_housing_data(housing_path=HOUSING_PATH):
+    csv_path = os.path.join("./", "housing.csv")
+    return pd.read_csv(csv_path)
+
+housing = load_housing_data()
+housing.head(10)
