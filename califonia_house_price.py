@@ -5,28 +5,16 @@ import os
 import tarfile
 import urllib.request
 
-DOWNLOAD_ROOT = "https://raw.githubusercontent.com/ageron/handson-ml2/master/"
+from file_download.github import download
+from file_load import csv
+
+HOUSING_URL = "https://raw.githubusercontent.com/ageron/handson-ml2/master/datasets/housing/housing.tgz"
 HOUSING_PATH = os.path.join("datasets", "housing")
-HOUSING_URL = DOWNLOAD_ROOT + "datasets/housing/housing.tgz"
 
-def fetch_housing_data(housing_url=HOUSING_URL, housing_path=HOUSING_PATH):
-    if os.path.isfile(os.path.join(housing_path, "housing.csv")): return
-    os.makedirs(housing_path, exist_ok=True)
-    tgz_path = os.path.join(housing_path, "housing.tgz")
-    urllib.request.urlretrieve(housing_url, tgz_path)
-    housing_tgz = tarfile.open(tgz_path)
-    housing_tgz.extractall(path=housing_path)
-    housing_tgz.close()
+download("housing", url=HOUSING_URL, path=HOUSING_PATH)
 
 
-
-import pandas as pd
-def load_housing_data(housing_path=HOUSING_PATH):
-    csv_path = os.path.join(housing_path, "housing.csv")
-    return pd.read_csv(csv_path)
-
-fetch_housing_data()
-housing = load_housing_data()
+housing = csv.load(os.path.join(housing_path, "housing.csv"))
 print(housing.head(10))
 
 
