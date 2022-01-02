@@ -5,16 +5,16 @@ import os
 import tarfile
 import urllib.request
 
-from file_download.github import download
+from file_download import github
 from file_load import csv
 
 HOUSING_URL = "https://raw.githubusercontent.com/ageron/handson-ml2/master/datasets/housing/housing.tgz"
 HOUSING_PATH = os.path.join("datasets", "housing")
 
-download("housing", url=HOUSING_URL, path=HOUSING_PATH)
+github.download("housing", url=HOUSING_URL, path=HOUSING_PATH)
 
 
-housing = csv.load(os.path.join(housing_path, "housing.csv"))
+housing = csv.load(os.path.join(HOUSING_PATH, "housing.csv"))
 print(housing.head(10))
 
 
@@ -71,6 +71,7 @@ from sklearn.model_selection import train_test_split
 
 train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
 
+import pandas as pd
 
 housing["income_cat"] = pd.cut(housing["median_income"], bins=[0., 1.5, 3.0, 4.5, 6., np.inf], labels=[1, 2, 3, 4, 5])
 housing["income_cat"].hist()
