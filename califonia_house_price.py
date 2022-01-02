@@ -11,7 +11,7 @@ from file_load import csv
 HOUSING_URL = "https://raw.githubusercontent.com/ageron/handson-ml2/master/datasets/housing/housing.tgz"
 HOUSING_PATH = os.path.join("datasets", "housing")
 
-github.download("housing", url=HOUSING_URL, path=HOUSING_PATH)
+github.download(url=HOUSING_URL, path=HOUSING_PATH)
 
 
 housing = csv.load(os.path.join(HOUSING_PATH, "housing.csv"))
