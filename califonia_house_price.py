@@ -2,8 +2,6 @@
 # 21.12.28 ~
 
 import os
-import tarfile
-import urllib.request
 
 from file_download import github
 from file_load import csv
@@ -12,18 +10,11 @@ HOUSING_URL = "https://raw.githubusercontent.com/ageron/handson-ml2/master/datas
 HOUSING_PATH = os.path.join("datasets", "housing")
 
 github.download(url=HOUSING_URL, path=HOUSING_PATH)
-
-
 housing = csv.load(os.path.join(HOUSING_PATH, "housing.csv"))
+
 print(housing.head(10))
-
-
 print(housing.info())
-
-
 print(housing["ocean_proximity"].value_counts())
-
-
 print(housing.describe())
 
 
