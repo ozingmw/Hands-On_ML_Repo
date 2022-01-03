@@ -3,6 +3,8 @@
 
 import os
 
+from scipy.sparse import dia
+
 from file_download import github
 from file_load import csv
 
@@ -20,7 +22,7 @@ print(housing.describe())
 
 import matplotlib.pyplot as plt
 housing.hist(bins=50, figsize=(20,15))
-plt.show()
+#plt.show()
 
 
 import numpy as np
@@ -62,7 +64,7 @@ import pandas as pd
 
 housing["income_cat"] = pd.cut(housing["median_income"], bins=[0., 1.5, 3.0, 4.5, 6., np.inf], labels=[1, 2, 3, 4, 5])
 housing["income_cat"].hist()
-plt.show()
+#plt.show()
 
 
 split = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
@@ -70,3 +72,38 @@ for train_index, test_index in split.split(housing, housing["income_cat"]):
     strat_train_set = housing.loc[train_index]
     strat_test_set = housing.loc[test_index]
 print(strat_test_set["income_cat"].value_counts() / len(strat_test_set))
+print(strat_train_set["income_cat"].value_counts() / len(strat_train_set))
+
+for set_ in (strat_train_set, strat_test_set):
+    set_.drop("income_cat", axis=1, inplace=True)
+
+
+housing = strat_train_set.copy()
+
+housing.plot(kind="scatter", x="longitude", y="latitude")
+#plt.show()
+housing.plot(kind="scatter", x="longitude", y="latitude", alpha=0.1)
+#plt.show()
+
+#alpha = 투명도
+
+housing.plot(kind="scatter", x="longitude", y="latitude", alpha=0.3,
+	s=housing["population"]/100, label="population", figsize=(10,7),
+    c="median_house_value", cmap=plt.get_cmap("jet"), colorbar=True,
+    sharex=False
+)
+plt.legend()
+#plt.show()
+
+corr_matrix = housing.corr()
+print(corr_matrix["median_house_value"].sort_values(ascending=False))
+
+
+from pandas.plotting import scatter_matrix
+attributes = ["median_house_value", "median_income", "total_rooms", "housing_median_age"]
+scatter_matrix(housing[attributes], figsize=(12,8), diagonal="kde")
+#plt.show()
+
+
+housing.plot(kind="scatter", x="median_income", y="median_house_value", alpha=0.1)
+
