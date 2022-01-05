@@ -104,6 +104,29 @@ attributes = ["median_house_value", "median_income", "total_rooms", "housing_med
 scatter_matrix(housing[attributes], figsize=(12,8), diagonal="kde")
 #plt.show()
 
-
 housing.plot(kind="scatter", x="median_income", y="median_house_value", alpha=0.1)
 
+
+housing["rooms_per_household"] = housing["total_rooms"] / housing["households"]
+housing["bedrooms_per_room"] = housing["total_bedrooms"] / housing["total_rooms"]
+housing["population_per_household"] = housing["population"] / housing["households"]
+
+corr_matrix = housing.corr()
+print(corr_matrix["median_house_value"].sort_values(ascending=False))
+
+
+housing = strat_train_set.drop("median_house_value", axis=1)
+housing_labels = strat_train_set["median_house_value"].copy()
+
+median = housing["total_bedrooms"].median()
+housing["total_bedrooms"].fillna(median, inplace=True)
+
+from sklearn.impute import SimpleImputer
+#KNNImputer 최근접 이웃 방식, 누락된 값 대체 / 변경ㄱ
+imputer = SimpleImputer(strategy="median")
+housing_num = housing.drop("ocean_proximity", axis=1)
+imputer.fit(housing_num)
+print(imputer.statistics_)
+print(housing_num.median().values)
+X = imputer.transform(housing_num)
+housing_tr = pd.DataFrame(X, columns=housing_num.columns, index=housing_num.index)
