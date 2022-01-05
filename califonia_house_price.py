@@ -150,3 +150,12 @@ from sklearn.preprocessing import OrdinalEncoder
 ordinal_encoder = OrdinalEncoder()
 housing_cat_encoded = ordinal_encoder.fit_transform(housing_cat)
 print(housing_cat_encoded[:10])
+
+print(ordinal_encoder.categories_)
+
+
+from sklearn.preprocessing import OneHotEncoder
+cat_encoder = OneHotEncoder()
+housing_cat_onehot = cat_encoder.fit_transform(housing_cat)
+print(housing_cat_onehot.toarray())
+
