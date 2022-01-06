@@ -62,7 +62,10 @@ train_set, test_set = train_test_split(housing, test_size=0.2, random_state=42)
 
 import pandas as pd
 
-housing["income_cat"] = pd.cut(housing["median_income"], bins=[0., 1.5, 3.0, 4.5, 6., np.inf], labels=[1, 2, 3, 4, 5])
+housing["income_cat"] = pd.cut(housing["median_income"], 
+							   bins=[0., 1.5, 3.0, 4.5, 6., np.inf], 
+                               labels=[1, 2, 3, 4, 5]
+                               )
 housing["income_cat"].hist()
 #plt.show()
 
@@ -121,8 +124,8 @@ housing_labels = strat_train_set["median_house_value"].copy()
 median = housing["total_bedrooms"].median()
 housing["total_bedrooms"].fillna(median, inplace=True)
 
-from sklearn.impute import SimpleImputer
-#KNNImputer 최근접 이웃 방식, 누락된 값 대체 / 변경ㄱ
+from sklearn.impute import SimpleImputer, KNNImputer
+#simple -> strategy에 따라 평균, 중앙값
 imputer = SimpleImputer(strategy="median")
 housing_num = housing.drop("ocean_proximity", axis=1)
 imputer.fit(housing_num)
@@ -130,3 +133,28 @@ print(imputer.statistics_)
 print(housing_num.median().values)
 X = imputer.transform(housing_num)
 housing_tr = pd.DataFrame(X, columns=housing_num.columns, index=housing_num.index)
+print(housing_tr.info())
+
+#KNN에 따라 최근접 이웃 방식
+imputer_K = KNNImputer()
+housing_num_K = housing.drop("ocean_proximity", axis=1)
+X_K = imputer_K.fit_transform(housing_num_K)
+housing_tr_K = pd.DataFrame(X_K, columns=housing_num_K.columns, index=housing_num_K.index)
+print(housing_tr_K.info())
+
+print(housing["ocean_proximity"])
+print(housing[["ocean_proximity"]])
+housing_cat = housing[["ocean_proximity"]]
+
+from sklearn.preprocessing import OrdinalEncoder
+ordinal_encoder = OrdinalEncoder()
+housing_cat_encoded = ordinal_encoder.fit_transform(housing_cat)
+print(housing_cat_encoded[:10])
+
+print(ordinal_encoder.categories_)
+
+
+from sklearn.preprocessing import OneHotEncoder
+cat_encoder = OneHotEncoder()
+housing_cat_onehot = cat_encoder.fit_transform(housing_cat)
+print(housing_cat_onehot.toarray())
