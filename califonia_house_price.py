@@ -1,9 +1,13 @@
 # Hand-On Machine Learning with Scikit-Learn, Keras & Tensorflow
 # 21.12.28 ~
 
+from ctypes import set_last_error
 import os
 
 from scipy.sparse import dia
+from scipy.stats.mstats_basic import linregress
+from sklearn import tree
+from sklearn.metrics.pairwise import pairwise_distances_argmin_min
 
 from file_download import github
 from file_load import csv
@@ -196,7 +200,7 @@ housing_num_tr = num_pipeline.fit_transform(housing_num_K)
 
 from sklearn.compose import ColumnTransformer, make_column_selector
 
-num_attribs = list(housing_num_K)
+num_attribs = list(housing_num)
 cat_attribs = ["ocean_proximity"]
 
 full_pipeline = ColumnTransformer([
@@ -208,9 +212,96 @@ housing_prepared = full_pipeline.fit_transform(housing)
 
 
 #make_colum_selector사용시 리스트 설정 필요 없이 알아서 추출해줌
+#오류 발생시 확인(p.109)
 full_pipeline_mcs = ColumnTransformer([
     					("num", num_pipeline, make_column_selector(dtype_include=np.float64)),
                         ("cat", OneHotEncoder(), make_column_selector(dtype_include=object)),
 					])
 
 housing_prepared_mcs = full_pipeline_mcs.fit_transform(housing)
+
+
+from sklearn.linear_model import LinearRegression
+
+lin_reg = LinearRegression()
+lin_reg.fit(housing_prepared_mcs, housing_labels)
+
+sdata = housing.iloc[:5]
+slabel = housing_labels.iloc[:5]
+sdata_prepared = full_pipeline.transform(sdata)
+print("predict : ", lin_reg.predict(sdata_prepared))
+print("label : ", list(slabel))
+
+from sklearn.metrics import mean_squared_error
+housing_predictions = lin_reg.predict(housing_prepared_mcs)
+lin_mse = mean_squared_error(housing_labels, housing_predictions)
+lin_rmse = np.sqrt(lin_mse)
+print(lin_rmse)
+
+
+from sklearn.tree import DecisionTreeRegressor
+
+tree_reg = DecisionTreeRegressor()
+tree_reg.fit(housing_prepared_mcs, housing_labels)
+
+housing_predictions = tree_reg.predict(housing_prepared_mcs)
+tree_mse = mean_squared_error(housing_labels, housing_predictions)
+tree_rmse = np.sqrt(tree_mse)
+print(tree_rmse)
+
+
+from sklearn.model_selection import cross_val_score
+
+scores = cross_val_score(tree_reg, housing_prepared_mcs, housing_labels, scoring="neg_mean_squared_error", cv=10)
+tree_rmse_scores = np.sqrt(-scores)
+
+def display_scores(scores):
+	print("score = ", scores)
+	print("avg = ", scores.mean())
+	print("std = ", scores.std())
+
+display_scores(tree_rmse_scores)
+
+lin_scores = cross_val_score(lin_reg, housing_prepared_mcs, housing_labels, scoring="neg_mean_squared_error", cv=10)
+lin_rmse_scores = np.sqrt(-lin_scores)
+display_scores(lin_rmse_scores)
+
+from sklearn.ensemble import RandomForestRegressor
+forest_reg = RandomForestRegressor()
+forest_reg.fit(housing_prepared_mcs, housing_labels)
+housing_predictions = forest_reg.predict(housing_prepared_mcs)
+forest_mse = mean_squared_error(housing_labels, housing_predictions)
+forest_rmse = np.sqrt(forest_mse)
+print(forest_rmse)
+forest_score = cross_val_score(forest_reg, housing_prepared_mcs, housing_labels, scoring="neg_mean_squared_error", cv=10)
+forest_rmse_score = np.sqrt(-forest_score)
+display_scores(forest_rmse_score)
+
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
+
+param_grid = [
+    {"n_estimators": [3, 10, 30], "max_features": [2, 4, 6, 8]},
+    {"bootstrap": [False], "n_estimators": [3, 10], "max_features": [2, 3, 4]},
+]
+
+forest_reg = RandomForestRegressor()
+grid_search = GridSearchCV(forest_reg, param_grid, cv=5, scoring="neg_mean_squared_error", return_train_score=True)
+grid_search.fit(housing_prepared_mcs, housing_labels)
+print(grid_search.best_params_)
+print(grid_search.best_estimator_)
+for mean_score, params in zip(grid_search.cv_results_["mean_test_score"], grid_search.cv_results_["params"]):
+    print(np.sqrt(-mean_score), params)
+
+
+param_dists = [
+    {"n_estimators": [3, 10, 30], "max_features": [2, 4, 6, 8]},
+    {"bootstrap": [False], "n_estimators": [3, 10], "max_features": [2, 3, 4]},
+]
+
+forest_reg = RandomForestRegressor()
+random_search = RandomizedSearchCV(forest_reg, param_dists, n_iter=500, cv=5, scoring="neg_mean_squared_error", random_state=42, return_train_score=True)
+random_search.fit(housing_prepared_mcs, housing_labels)
+print(random_search.best_params_)
+print(random_search.best_estimator_)
+for mean_score, params in zip(random_search.cv_results_["mean_test_score"], random_search.cv_results_["params"]):
+    print(np.sqrt(-mean_score), params)
