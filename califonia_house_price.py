@@ -159,3 +159,58 @@ cat_encoder = OneHotEncoder()
 housing_cat_onehot = cat_encoder.fit_transform(housing_cat)
 print(housing_cat_onehot.toarray())
 
+
+from sklearn.base import BaseEstimator, TransformerMixin
+
+rooms_ix, bedrooms_ix, population_ix, household_ix = 3, 4, 5, 6
+
+class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
+    def __init__(self, add_bedrooms_per_room = True):
+        self.add_bedrooms_per_room = add_bedrooms_per_room
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X):
+        rooms_per_household = X[:, rooms_ix] / X[:, household_ix]
+        population_per_household = X[:, population_ix] / X[:, household_ix]
+        if self.add_bedrooms_per_room:
+            bedrooms_per_room = X[:, bedrooms_ix] / X[:, rooms_ix]
+            return np.c_[X, rooms_per_household, population_per_household, bedrooms_per_room]
+        else:
+            return np.c_[X, rooms_per_household, population_per_household]
+
+attr_adder = CombinedAttributesAdder(add_bedrooms_per_room=False)
+housing_extra_attribs = attr_adder.transform(housing.values)
+
+
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+
+num_pipeline = Pipeline([
+    				("imputer", KNNImputer()),
+                    ("attribs_adder", CombinedAttributesAdder()),
+                    ("std_scaler", StandardScaler()),
+			   ])
+
+housing_num_tr = num_pipeline.fit_transform(housing_num_K)
+
+
+from sklearn.compose import ColumnTransformer, make_column_selector
+
+num_attribs = list(housing_num_K)
+cat_attribs = ["ocean_proximity"]
+
+full_pipeline = ColumnTransformer([
+    				("num", num_pipeline, num_attribs),
+                    ("cat", OneHotEncoder(), cat_attribs),
+				])
+
+housing_prepared = full_pipeline.fit_transform(housing)
+
+
+#make_colum_selector사용시 리스트 설정 필요 없이 알아서 추출해줌
+full_pipeline_mcs = ColumnTransformer([
+    					("num", num_pipeline, make_column_selector(dtype_include=np.float64)),
+                        ("cat", OneHotEncoder(), make_column_selector(dtype_include=object)),
+					])
+
+housing_prepared_mcs = full_pipeline_mcs.fit_transform(housing)
