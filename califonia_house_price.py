@@ -293,15 +293,24 @@ for mean_score, params in zip(grid_search.cv_results_["mean_test_score"], grid_s
     print(np.sqrt(-mean_score), params)
 
 
-param_dists = [
-    {"n_estimators": [3, 10, 30], "max_features": [2, 4, 6, 8]},
-    {"bootstrap": [False], "n_estimators": [3, 10], "max_features": [2, 3, 4]},
-]
+#param_dists = [
+#    {"n_estimators": [3, 10, 30], "max_features": [2, 4, 6, 8]},
+#    {"bootstrap": [False], "n_estimators": [3, 10], "max_features": [2, 3, 4]},
+#]
 
-forest_reg = RandomForestRegressor()
-random_search = RandomizedSearchCV(forest_reg, param_dists, n_iter=500, cv=5, scoring="neg_mean_squared_error", random_state=42, return_train_score=True)
-random_search.fit(housing_prepared_mcs, housing_labels)
-print(random_search.best_params_)
-print(random_search.best_estimator_)
-for mean_score, params in zip(random_search.cv_results_["mean_test_score"], random_search.cv_results_["params"]):
-    print(np.sqrt(-mean_score), params)
+# forest_reg = RandomForestRegressor()
+# random_search = RandomizedSearchCV(forest_reg, param_dists, n_iter=10, cv=5, scoring="neg_mean_squared_error", random_state=42, return_train_score=True)
+# random_search.fit(housing_prepared_mcs, housing_labels)
+# print(random_search.best_params_)
+# print(random_search.best_estimator_)
+# for mean_score, params in zip(random_search.cv_results_["mean_test_score"], random_search.cv_results_["params"]):
+#     print(np.sqrt(-mean_score), params)
+
+feature_importances = grid_search.best_estimator_.feature_importances_
+print(feature_importances)
+
+extra_attribs = ["rooms_per_hhold", "pop_per_hhold", "bedrooms_per_room"]
+cat_encoder = full_pipeline_mcs.named_transformers_["cat"]
+cat_one_hot_attribs = list(cat_encoder.categories_[0])
+attributes = num_attribs + extra_attribs + cat_one_hot_attribs
+print(sorted(zip(feature_importances, attributes), reverse=True))
