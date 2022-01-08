@@ -318,11 +318,11 @@ for mean_score, params in zip(grid_search.cv_results_["mean_test_score"], grid_s
 from sklearn.svm import SVR
 from scipy.stats import reciprocal, expon
 
-param_grid_with_svr = [
+param_grid_with_svr = {
     "kernel": ["linear", "rbf"],
     "C": reciprocal(20, 200000),
     "gamma": expon(scale=1.0)
-]
+}
 
 sv_reg = SVR()
 grid_search_with_svr = GridSearchCV(sv_reg, param_grid_with_svr, cv=5, scoring="neg_mean_squared_error", return_train_score=True, n_jobs=-1)
