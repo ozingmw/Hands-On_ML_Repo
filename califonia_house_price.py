@@ -180,6 +180,20 @@ attr_adder = CombinedAttributesAdder(add_bedrooms_per_room=False)
 housing_extra_attribs = attr_adder.transform(housing.values)
 
 
+def indices_of_top_N(arr, n):
+    return np.sort(np.argpartition(np.array(arr), -n)[-n:])
+
+class TopFeatureSelector(BaseEstimator, TransformerMixin):
+    def __init__(self, feature_importances, n):
+        self.feature_importances = feature_importances
+        self.n = n
+    def fit(self, X, y=None):
+        self.feature_indices_ = indices_of_top_N(self.feature_importances, self.n)
+        return self
+    def transform(self, X):
+        return X[:, self.feature_indices_]
+
+
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
@@ -206,7 +220,6 @@ housing_prepared = full_pipeline.fit_transform(housing)
 
 
 #make_colum_selector사용시 리스트 설정 필요 없이 알아서 추출해줌
-#오류 발생시 확인(p.109)
 full_pipeline_mcs = ColumnTransformer([
     					("num", num_pipeline, make_column_selector(dtype_include=np.float64)),
                         ("cat", OneHotEncoder(), make_column_selector(dtype_include=object)),
@@ -287,33 +300,35 @@ for mean_score, params in zip(grid_search.cv_results_["mean_test_score"], grid_s
     print(np.sqrt(-mean_score), params)
 
 
-param_dists = [
-   {"n_estimators": range(100,1000,50), "max_features": range(1,10)},
-   {"bootstrap": [False], "n_estimators": range(0,100,10), "max_features": range(1,10)},
-]
+# param_dists = [
+#    {"n_estimators": range(100,1000,50), "max_features": range(1,10)},
+#    {"bootstrap": [False], "n_estimators": range(0,100,10), "max_features": range(1,10)},
+# ]
 
-forest_reg = RandomForestRegressor()
-random_search = RandomizedSearchCV(forest_reg, param_dists, n_iter=10, cv=5, scoring="neg_mean_squared_error", random_state=42, return_train_score=True, n_jobs=-1)
-random_search.fit(housing_prepared_mcs, housing_labels)
-print(random_search.best_params_)
-print(random_search.best_estimator_)
-for mean_score, params in zip(random_search.cv_results_["mean_test_score"], random_search.cv_results_["params"]):
-    print(np.sqrt(-mean_score), params)
+# forest_reg = RandomForestRegressor()
+# random_search = RandomizedSearchCV(forest_reg, param_dists, n_iter=10, cv=5, scoring="neg_mean_squared_error", random_state=42, return_train_score=True, n_jobs=-1)
+# random_search.fit(housing_prepared_mcs, housing_labels)
+# print(random_search.best_params_)
+# print(random_search.best_estimator_)
+# for mean_score, params in zip(random_search.cv_results_["mean_test_score"], random_search.cv_results_["params"]):
+#     print(np.sqrt(-mean_score), params)
 
 
 # 시간 너무 오래 걸려서 주석처리
-# from sklearn.svm import SVR
+from sklearn.svm import SVR
+from scipy.stats import reciprocal, expon
 
-# param_grid_with_svr = [
-#     {"kernel": ["linear"], "C": [0.001, 0.01, 0.1, 1., 10., 100., 1000.]},
-#     {"kernel": ["rbf"], "C": [0.001, 0.01, 0.1, 1., 10., 100., 1000.], "gamma": [0.01, 0.1, 1., 10.]},
-# ]
+param_grid_with_svr = {
+    "kernel": ["linear", "rbf"],
+    "C": reciprocal(20, 200000),
+    "gamma": expon(scale=1.0)
+}
 
-# sv_reg = SVR()
-# grid_search_with_svr = GridSearchCV(sv_reg, param_grid_with_svr, cv=5, scoring="neg_mean_squared_error", return_train_score=True, n_jobs=-1)
-# grid_search_with_svr.fit(housing_prepared_mcs, housing_labels)
-# print(grid_search_with_svr.best_estimator_)
-# print(grid_search_with_svr.best_params_)
+sv_reg = SVR()
+grid_search_with_svr = GridSearchCV(sv_reg, param_grid_with_svr, cv=5, scoring="neg_mean_squared_error", return_train_score=True, n_jobs=-1)
+grid_search_with_svr.fit(housing_prepared_mcs, housing_labels)
+print(grid_search_with_svr.best_estimator_)
+print(grid_search_with_svr.best_params_)
 
 
 feature_importances = grid_search.best_estimator_.feature_importances_
@@ -325,6 +340,20 @@ cat_one_hot_attribs = list(cat_encoder.categories_[0])
 attributes = num_attribs + extra_attribs + cat_one_hot_attribs
 print(sorted(zip(feature_importances, attributes), reverse=True))
 
+n=5
+preparation_and_feature_selection_pipeline = Pipeline([
+    ("preparation", full_pipeline_mcs),
+    ("feature_selection", TopFeatureSelector(feature_importances, n))
+])
+
+
+prepare_select_and_predict_pipeline = Pipeline([
+    ("preparation", full_pipeline_mcs),
+    ("feature_selection", TopFeatureSelector(feature_importances, n)),
+    ("sv_reg", SVR(**grid_search_with_svr.best_params_))
+])
+
+prepare_select_and_predict_pipeline.fit(housing, housing_labels)
 
 final_model = grid_search.best_estimator_
  
