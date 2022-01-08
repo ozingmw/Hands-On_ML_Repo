@@ -1,13 +1,7 @@
 # Hand-On Machine Learning with Scikit-Learn, Keras & Tensorflow
 # 21.12.28 ~
 
-from ctypes import set_last_error
 import os
-
-from scipy.sparse import dia
-from scipy.stats.mstats_basic import linregress
-from sklearn import tree
-from sklearn.metrics.pairwise import pairwise_distances_argmin_min
 
 from file_download import github
 from file_load import csv
@@ -293,18 +287,34 @@ for mean_score, params in zip(grid_search.cv_results_["mean_test_score"], grid_s
     print(np.sqrt(-mean_score), params)
 
 
-#param_dists = [
-#    {"n_estimators": [3, 10, 30], "max_features": [2, 4, 6, 8]},
-#    {"bootstrap": [False], "n_estimators": [3, 10], "max_features": [2, 3, 4]},
-#]
+param_dists = [
+   {"n_estimators": range(100,1000,50), "max_features": range(1,10)},
+   {"bootstrap": [False], "n_estimators": range(0,100,10), "max_features": range(1,10)},
+]
 
-# forest_reg = RandomForestRegressor()
-# random_search = RandomizedSearchCV(forest_reg, param_dists, n_iter=10, cv=5, scoring="neg_mean_squared_error", random_state=42, return_train_score=True)
-# random_search.fit(housing_prepared_mcs, housing_labels)
-# print(random_search.best_params_)
-# print(random_search.best_estimator_)
-# for mean_score, params in zip(random_search.cv_results_["mean_test_score"], random_search.cv_results_["params"]):
-#     print(np.sqrt(-mean_score), params)
+forest_reg = RandomForestRegressor()
+random_search = RandomizedSearchCV(forest_reg, param_dists, n_iter=10, cv=5, scoring="neg_mean_squared_error", random_state=42, return_train_score=True, n_jobs=-1)
+random_search.fit(housing_prepared_mcs, housing_labels)
+print(random_search.best_params_)
+print(random_search.best_estimator_)
+for mean_score, params in zip(random_search.cv_results_["mean_test_score"], random_search.cv_results_["params"]):
+    print(np.sqrt(-mean_score), params)
+
+
+# 시간 너무 오래 걸려서 주석처리
+# from sklearn.svm import SVR
+
+# param_grid_with_svr = [
+#     {"kernel": ["linear"], "C": [0.001, 0.01, 0.1, 1., 10., 100., 1000.]},
+#     {"kernel": ["rbf"], "C": [0.001, 0.01, 0.1, 1., 10., 100., 1000.], "gamma": [0.01, 0.1, 1., 10.]},
+# ]
+
+# sv_reg = SVR()
+# grid_search_with_svr = GridSearchCV(sv_reg, param_grid_with_svr, cv=5, scoring="neg_mean_squared_error", return_train_score=True, n_jobs=-1)
+# grid_search_with_svr.fit(housing_prepared_mcs, housing_labels)
+# print(grid_search_with_svr.best_estimator_)
+# print(grid_search_with_svr.best_params_)
+
 
 feature_importances = grid_search.best_estimator_.feature_importances_
 print(feature_importances)
@@ -327,3 +337,11 @@ final_predictions = final_model.predict(X_test_prepared)
  
 final_mse = mean_squared_error(y_test, final_predictions)
 final_rmse = np.sqrt(final_mse)
+print(final_rmse)
+
+
+from scipy import stats
+
+confidence = 0.95
+squared_errors = (final_predictions - y_test) ** 2
+print(np.sqrt(stats.t.interval(confidence, len(squared_errors) - 1, loc=squared_errors.mean(), scale=stats.sem(squared_errors))))
