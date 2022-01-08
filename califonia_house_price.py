@@ -3,8 +3,6 @@
 
 import os
 
-from numpy.core.numeric import full
-
 from file_download import github
 from file_load import csv
 
