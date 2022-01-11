@@ -1,3 +1,4 @@
+from numpy.lib.function_base import average
 from sklearn.datasets import fetch_openml
 mnist = fetch_openml("mnist_784", version=1, as_frame=False)
 print(mnist.keys())
@@ -23,7 +24,7 @@ from sklearn.model_selection import cross_val_predict, cross_val_score
 from sklearn.metrics import confusion_matrix
 # print(confusion_matrix(y_train, y_train_pred))
 
-# from sklearn.metrics import f1_score, plot_precision_recall_curve
+from sklearn.metrics import f1_score, plot_precision_recall_curve
 # print(f1_score(y_train, y_train_pred, average="weighted"))
 
 # y_scores = cross_val_predict(sgd_clf, X_train, y_train, cv=3, method="decision_function")
@@ -73,9 +74,26 @@ X_ab = X_train[(y_train == cl_a) & (y_train_pred == cl_b)]
 X_ba = X_train[(y_train == cl_b) & (y_train_pred == cl_a)]
 X_bb = X_train[(y_train == cl_b) & (y_train_pred == cl_b)]
 
-plt.figure(figsize=(8,8))
-plt.subplot(221); plot_digits(X_aa[:25], images_per_row=5)
-plt.subplot(222); plot_digits(X_ab[:25], images_per_row=5)
-plt.subplot(223); plot_digits(X_ba[:25], images_per_row=5)
-plt.subplot(224); plot_digits(X_bb[:25], images_per_row=5)
-plt.show()
+from sklearn.neighbors import KNeighborsClassifier
+
+y_train_large = (y_train >= 7)
+y_train_odd = (y_train % 2 == 1)
+y_multilabel = np.c_[y_train_large, y_train_odd]
+
+knn_clf = KNeighborsClassifier()
+knn_clf.fit(X_train, y_multilabel)
+
+print(knn_clf.predict([X[0]]))
+
+y_train_knn_pred = cross_val_predict(knn_clf, X_train, y_multilabel, cv=3)
+print(f1_score(y_multilabel, y_train_knn_pred, average="weighted"))
+
+noise = np.random.randint(p, 100, (len(X_train), 784))
+X_train_mod = X_train + noise
+noise = np.random.randint(0, 100, (len(X_test), 784))
+X_test_mod = X_test + noise
+y_train_mod = X_train
+y_test_mod = X_test
+
+knn_clf.fit(X_train_mod, y_train_mod)
+clean_digit = knn_clf.predict([X_test_mod[X[0]]])
