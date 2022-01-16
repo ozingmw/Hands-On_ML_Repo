@@ -37,9 +37,8 @@ print(test_data.info())
 
 class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
     def __init__(self):
-        # col_names = "SibSp", "Parch"
-        # self.sibsp_ix, self.parch_ix = [test_data.columns.get_loc(c) for c in col_names]
-        self.sibsp_ix, self.parch_ix = 1, 2
+        col_names = "SibSp", "Parch"
+        self.sibsp_ix, self.parch_ix = [num_attribs.index(c) for c in col_names]
     def fit(self, X, y=None):
         return self
     def transform(self, X):
