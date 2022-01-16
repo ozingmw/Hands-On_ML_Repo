@@ -1,4 +1,3 @@
-from operator import index
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -23,9 +22,6 @@ print(train_data.describe())
 
 train_data = train_data.set_index("PassengerId")
 test_data = test_data.set_index("PassengerId")
-
-train_data["RelativesOnboard"] = train_data["SibSp"] + train_data["Parch"]
-test_data["RelativesOnboard"] = test_data["SibSp"] + test_data["Parch"]
 
 num_attribs = ["Age", "SibSp", "Parch", "Fare"]
 cat_attribs = ["Pclass", "Sex", "Embarked"]
