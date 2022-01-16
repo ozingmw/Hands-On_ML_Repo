@@ -35,6 +35,9 @@ print(test_data.head())
 
 print(test_data.info())
 
+# 승객 등급별 나이 집어넣은 뒤, 나이별로 그룹하여 새로운 열 추가
+# 파라미터 조절
+
 class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
     def __init__(self):
         col_names = "SibSp", "Parch"
