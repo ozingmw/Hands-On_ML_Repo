@@ -7,9 +7,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, GridSearchCV
 from sklearn.base import BaseEstimator, TransformerMixin
-
+from sklearn.linear_model import LinearRegression
 train_data = pd.read_csv("./datasets/titanic/train.csv")
 test_data = pd.read_csv("./datasets/titanic/test.csv")
 
@@ -44,6 +44,10 @@ class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
         RelativesOnborad = X[:, self.sibsp_ix] + X[:, self.parch_ix]
         return np.c_[X, RelativesOnborad]
 
+
+
+
+
 num_pipeline = Pipeline([
     ("imputer", KNNImputer()),
     ("attrib_adder", CombinedAttributesAdder()),
@@ -55,18 +59,31 @@ cat_pipeline = Pipeline([
     ("scaler", OneHotEncoder())
 ])
 
-full_pipeline = ColumnTransformer([
+preprocessor = ColumnTransformer([
     ("num", num_pipeline, num_attribs),
     ("cat", cat_pipeline, cat_attribs)
 ])
 
-X_train = full_pipeline.fit_transform(train_data[num_attribs+cat_attribs])
+# ml_model = Pipeline([
+#     ("preprocessor", preprocessor),
+#     ("model", LinearRegression())
+# ])
+
+X_train = preprocessor.fit(train_data[num_attribs+cat_attribs])
 y_train = train_data["Survived"]
 
-rf_clf = RandomForestClassifier(n_estimators=100, n_jobs=-1, random_state=42)
-rf_clf.fit(X_train, y_train)
+params = [
+    {"n_estimators": [1,3,5,10,30,70,150,500], "max_features": ["auto", "sqrt", "log2"]}
+]
 
-X_test = full_pipeline.transform(test_data[num_attribs+cat_attribs])
+rf_clf = RandomForestClassifier(n_estimators=100, n_jobs=-1, random_state=42)
+
+grid_search = GridSearchCV(rf_clf, params, cv=5, scoring="neg_mean_squared_error", return_train_score=True)
+final_model = grid_search.best_estimator_
+grid_search.fit(X_train, y_train)
+############
+
+X_test = preprocessor.transform(test_data[num_attribs+cat_attribs])
 y_pred = rf_clf.predict(X_test)
 rf_score = cross_val_score(rf_clf, X_test, y_pred, cv=10)
 print(rf_score.mean())
