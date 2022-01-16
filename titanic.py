@@ -1,4 +1,3 @@
-from operator import index
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
@@ -9,6 +8,7 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score
+from sklearn.base import BaseEstimator, TransformerMixin
 
 train_data = pd.read_csv("./datasets/titanic/train.csv")
 test_data = pd.read_csv("./datasets/titanic/test.csv")
@@ -23,10 +23,7 @@ print(train_data.describe())
 train_data = train_data.set_index("PassengerId")
 test_data = test_data.set_index("PassengerId")
 
-train_data["RelativesOnboard"] = train_data["SibSp"] + train_data["Parch"]
-test_data["RelativesOnboard"] = test_data["SibSp"] + test_data["Parch"]
-
-num_attribs = ["Age", "RelativesOnboard", "Fare"]
+num_attribs = ["Age", "SibSp", "Parch", "Fare"]
 cat_attribs = ["Pclass", "Sex", "Embarked"]
 
 print(train_data.head(10))
@@ -34,8 +31,22 @@ print(test_data.head())
 
 print(test_data.info())
 
+# 승객 등급별 나이 집어넣은 뒤, 나이별로 그룹하여 새로운 열 추가
+# 파라미터 조절
+
+class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        col_names = "SibSp", "Parch"
+        self.sibsp_ix, self.parch_ix = [num_attribs.index(c) for c in col_names]
+    def fit(self, X, y=None):
+        return self
+    def transform(self, X):
+        RelativesOnborad = X[:, self.sibsp_ix] + X[:, self.parch_ix]
+        return np.c_[X, RelativesOnborad]
+
 num_pipeline = Pipeline([
     ("imputer", KNNImputer()),
+    ("attrib_adder", CombinedAttributesAdder()),
     ("scaler", StandardScaler())
 ])
 
@@ -55,8 +66,8 @@ y_train = train_data["Survived"]
 rf_clf = RandomForestClassifier(n_estimators=100, n_jobs=-1, random_state=42)
 rf_clf.fit(X_train, y_train)
 
-X_test = full_pipeline.transform(test_data)
+X_test = full_pipeline.transform(test_data[num_attribs+cat_attribs])
 y_pred = rf_clf.predict(X_test)
 rf_score = cross_val_score(rf_clf, X_test, y_pred, cv=10)
 print(rf_score.mean())
-result = pd.DataFrame(np.c_[test_data.index, y_pred], columns=["PassengerId", "Survived"]).to_csv("titanic_result.csv", index=False)
+result = pd.DataFrame(np.c_[test_data.index, y_pred], columns=["PassengerId", "Survived"]).to_csv("./datasets/titanic/titanic_result.csv", index=False)
