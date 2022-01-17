@@ -7,7 +7,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score, GridSearchCV
+from sklearn.model_selection import GridSearchCV
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.linear_model import LinearRegression
 train_data = pd.read_csv("./datasets/titanic/train.csv")
@@ -69,22 +69,20 @@ preprocessor = ColumnTransformer([
 #     ("model", LinearRegression())
 # ])
 
-X_train = preprocessor.fit(train_data[num_attribs+cat_attribs])
+X_train = preprocessor.fit_transform(train_data[num_attribs+cat_attribs])
 y_train = train_data["Survived"]
 
 params = [
-    {"n_estimators": [1,3,5,10,30,70,150,500], "max_features": ["auto", "sqrt", "log2"]}
+    {"n_estimators": [200,225,250,275,300], "max_features": ["auto", "sqrt", "log2"]}
 ]
 
-rf_clf = RandomForestClassifier(n_estimators=100, n_jobs=-1, random_state=42)
-
-grid_search = GridSearchCV(rf_clf, params, cv=5, scoring="neg_mean_squared_error", return_train_score=True)
-final_model = grid_search.best_estimator_
+rf_clf = RandomForestClassifier()
+grid_search = GridSearchCV(rf_clf, params, cv=10, scoring="accuracy", n_jobs=-1)
 grid_search.fit(X_train, y_train)
+final_model = grid_search.best_estimator_
+print(final_model)
 ############
 
 X_test = preprocessor.transform(test_data[num_attribs+cat_attribs])
-y_pred = rf_clf.predict(X_test)
-rf_score = cross_val_score(rf_clf, X_test, y_pred, cv=10)
-print(rf_score.mean())
+y_pred = final_model.predict(X_test)
 result = pd.DataFrame(np.c_[test_data.index, y_pred], columns=["PassengerId", "Survived"]).to_csv("./datasets/titanic/titanic_result.csv", index=False)
