@@ -44,8 +44,9 @@ class CombinedAttributesAdder(BaseEstimator, TransformerMixin):
         RelativesOnborad = X[:, self.sibsp_ix] + X[:, self.parch_ix]
         return np.c_[X, RelativesOnborad]
 
-
-
+class SeperateAttributes(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        first_class_age_ix = test_data["Pclass"] == 1
 
 
 num_pipeline = Pipeline([
