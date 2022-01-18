@@ -81,7 +81,7 @@ grid_search = GridSearchCV(rf_clf, params, cv=10, scoring="accuracy", n_jobs=-1)
 grid_search.fit(X_train, y_train)
 final_model = grid_search.best_estimator_
 print(final_model)
-############
+############test
 
 X_test = preprocessor.transform(test_data[num_attribs+cat_attribs])
 y_pred = final_model.predict(X_test)
