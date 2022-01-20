@@ -3,6 +3,8 @@ import email
 import email.policy
 import email.parser
 import re
+import nltk
+import urlextract
 
 from collections import Counter
 from html import unescape
@@ -72,14 +74,9 @@ sample_html_spam = html_spam_emails[7]
 # print(sample_html_spam.get_content().strip()[:500], "...")
 print(html_to_plain_text(sample_html_spam.get_content())[:500], "...")
 
-try:
-    import nltk
+stemmer = nltk.PorterStemmer()
+for word in ("Computations", "Computation", "Computing", "Computed", "Compute", "Compulsive"):
+    print(word, "=>", stemmer.stem(word))
 
-    stemmer = nltk.PorterStemmer()
-    for word in ("Computations", "Computation", "Computing", "Computed", "Compute", "Compulsive"):
-        print(word, "=>", stemmer.stem(word))
-except ImportError:
-    print("Error: stemming requires the NLTK module.")
-    stemmer = None
 url_extractor = urlextract.URLExtract()
 print(url_extractor.find_urls("Will it detect github.com and https://youtu.be/7Pq-S557XQU?t=3m32s"))
