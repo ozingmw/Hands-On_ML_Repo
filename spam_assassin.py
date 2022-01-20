@@ -2,8 +2,10 @@ import os
 import email
 import email.policy
 import email.parser
+import re
 
 from collections import Counter
+from html import unescape
 
 SPAM_PATH = os.path.join("datasets", "spam")
 HAM_DIR = os.path.join(SPAM_PATH, "easy_ham")
@@ -56,3 +58,28 @@ X = np.array(ham_emails + spam_emails, dtype=object)
 y = np.array([0] * len(ham_emails) + [1] * len(spam_emails))
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+def html_to_plain_text(html):
+    text = re.sub('<head.*?>.*?</head>', '', html, flags=re.M | re.S | re.I)
+    text = re.sub('<a\s.*?>', ' HYPERLINK ', text, flags=re.M | re.S | re.I)
+    text = re.sub('<.*?>', '', text, flags=re.M | re.S)
+    text = re.sub(r'(\s*\n)+', '\n', text, flags=re.M | re.S)
+    return unescape(text)
+
+html_spam_emails = [email for email in X_train[y_train==1]
+                    if get_email_structure(email) == "text/html"]
+sample_html_spam = html_spam_emails[7]
+# print(sample_html_spam.get_content().strip()[:500], "...")
+print(html_to_plain_text(sample_html_spam.get_content())[:500], "...")
+
+try:
+    import nltk
+
+    stemmer = nltk.PorterStemmer()
+    for word in ("Computations", "Computation", "Computing", "Computed", "Compute", "Compulsive"):
+        print(word, "=>", stemmer.stem(word))
+except ImportError:
+    print("Error: stemming requires the NLTK module.")
+    stemmer = None
+url_extractor = urlextract.URLExtract()
+print(url_extractor.find_urls("Will it detect github.com and https://youtu.be/7Pq-S557XQU?t=3m32s"))
