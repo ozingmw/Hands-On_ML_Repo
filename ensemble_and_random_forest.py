@@ -33,7 +33,7 @@ svm_clf = SVC(probability=True, random_state=42)
 
 voting_clf = VotingClassifier(
     estimators=[("lr", log_clf), ("rf", rnd_clf), ("svc", svm_clf)],
-    voting="soft",
+    voting="soft",  
 )
 
 voting_clf.fit(X_train, y_train)
