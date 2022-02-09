@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.datasets import fetch_openml
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, VotingClassifier
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.svm import LinearSVC
 from sklearn.neural_network import MLPClassifier
@@ -35,3 +36,18 @@ voting_clf.voting = "hard"
 print(voting_clf.score(X_test, y_test))
 print([estimator.score(X_test,y_test) for estimator in voting_clf.estimators_])
 
+X_val_predictions = np.empty((len(X_val), len(estimators)), dtype=np.float32)
+for index, estimator in enumerate(estimators):
+    X_val_predictions[:, index] = estimator.predict(X_val)
+
+rnd_clf_blender = RandomForestClassifier(n_estimators=200, oob_score=True, random_state=42)
+rnd_clf_blender.fit(X_val_predictions, y_val)
+print(rnd_clf_blender.oob_score_)
+
+X_test_predictions = np.empty((len(X_test), len(estimators)), dtype=np.float32)
+for index, estimator in enumerate(estimators):
+    X_test_predictions[:, index] = estimator.predict(X_test)
+    
+y_pred = rnd_clf_blender.predict(X_test_predictions)
+
+print(accuracy_score(y_test, y_pred))
