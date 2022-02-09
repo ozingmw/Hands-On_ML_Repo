@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.datasets import fetch_openml
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA, IncrementalPCA
 from sklearn.model_selection import train_test_split
 
 np.random.seed(4)
@@ -53,3 +53,24 @@ pca.fit(X, y)
 cumsum = np.cumsum(pca.explained_variance_ratio_)
 d = np.argmax(cumsum >= 0.95) * 1
 print(d)
+
+pca = PCA(n_components=0.95)
+X_reduced = pca.fit_transform(X_train)
+print(pca.n_components_)
+print(np.sum(pca.explained_variance_ratio_))
+
+pca = PCA(n_components=154)
+X_reduced = pca.fit_transform(X_train)
+X_reduced = pca.inverse_transform(X_reduced)
+
+rnd_pca = PCA(n_components=154, svd_solver="randomized")
+X_reduced = rnd_pca.fit_transform(X_train)
+
+
+n_batches = 100
+inc_pca = IncrementalPCA(n_components=154)
+for X_batch in np.array_split(X_train, n_batches):
+    inc_pca.partial_fit(X_batch)
+
+X_reduced = inc_pca.transform(X_train)
+X_recoverd_inc_pca = inc_pca.inverse_transform(X_reduced)
