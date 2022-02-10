@@ -85,3 +85,7 @@ X, t = make_swiss_roll(n_samples=1000, noise=0.2)
 
 rbf_pca = KernelPCA(n_components=2, kernel="rbf", gamma=0.04)
 X_reduced = rbf_pca.fit_transform(X)
+
+lin_pca = KernelPCA(n_components=2, kernel="linear", fit_inverse_transform=True)
+rbf_pca = KernelPCA(n_components=2, kernel="rbf", gamma=0.443, fit_inverse_transform=True)
+sig_pca = KernelPCA(n_components=2, kernel="sigmoid", gamma=0.001, fit_inverse_transform=True)
