@@ -1,6 +1,6 @@
 import numpy as np
-from sklearn.datasets import fetch_openml
-from sklearn.decomposition import PCA, IncrementalPCA
+from sklearn.datasets import fetch_openml, make_swiss_roll
+from sklearn.decomposition import PCA, IncrementalPCA, KernelPCA
 from sklearn.model_selection import train_test_split
 
 np.random.seed(4)
@@ -61,7 +61,8 @@ print(np.sum(pca.explained_variance_ratio_))
 
 pca = PCA(n_components=154)
 X_reduced = pca.fit_transform(X_train)
-X_reduced = pca.inverse_transform(X_reduced)
+X_recoverd = pca.inverse_transform(X_reduced)
+X_reduced_pca = X_reduced
 
 rnd_pca = PCA(n_components=154, svd_solver="randomized")
 X_reduced = rnd_pca.fit_transform(X_train)
@@ -74,3 +75,17 @@ for X_batch in np.array_split(X_train, n_batches):
 
 X_reduced = inc_pca.transform(X_train)
 X_recoverd_inc_pca = inc_pca.inverse_transform(X_reduced)
+X_reduced_inc_pca = X_reduced
+
+print(np.allclose(pca.mean_, inc_pca.mean_))    #평균은 같다.
+print(np.allclose(X_reduced_pca, X_reduced_inc_pca))    #완전히 동일하진 않다.
+
+
+X, t = make_swiss_roll(n_samples=1000, noise=0.2)
+
+rbf_pca = KernelPCA(n_components=2, kernel="rbf", gamma=0.04)
+X_reduced = rbf_pca.fit_transform(X)
+
+lin_pca = KernelPCA(n_components=2, kernel="linear", fit_inverse_transform=True)
+rbf_pca = KernelPCA(n_components=2, kernel="rbf", gamma=0.443, fit_inverse_transform=True)
+sig_pca = KernelPCA(n_components=2, kernel="sigmoid", gamma=0.001, fit_inverse_transform=True)
