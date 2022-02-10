@@ -1,7 +1,9 @@
 import numpy as np
 from sklearn.datasets import fetch_openml
-from sklearn.decomposition import PCA, IncrementalPCA
-from sklearn.model_selection import train_test_split
+from sklearn.decomposition import PCA, IncrementalPCA, KernelPCA
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.pipeline import Pipeline
 
 np.random.seed(4)
 m = 60
@@ -74,3 +76,23 @@ for X_batch in np.array_split(X_train, n_batches):
 
 X_reduced = inc_pca.transform(X_train)
 X_recoverd_inc_pca = inc_pca.inverse_transform(X_reduced)
+
+
+clf = Pipeline([
+    ("kpca", KernelPCA(n_components=2)),
+    ("log_reg", LogisticRegression()),
+])
+
+param_grid = [{
+    "kpca_gamma": np.linspace(0.03, 0.05, 10),
+    "kpca_kernel": ["rbf", "sigmoid"],
+}]
+
+grid_search = GridSearchCV(clf, param_grid, cv=3)
+grid_search.fit(X, y)
+print(grid_search.best_params_)
+print(grid_search.best_estimator_)
+
+rbf_pca = KernelPCA(n_components=2, kernel="rbf", gamma=0.0443, fit_inverse_transform=True)
+X_reduced = rbf_pca.fit_transform(X)
+X_preimage = rbf_pca.inverse_transform(X_reduced)
