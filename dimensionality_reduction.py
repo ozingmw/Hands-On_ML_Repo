@@ -1,7 +1,11 @@
 import numpy as np
 from sklearn.datasets import fetch_openml, make_swiss_roll
 from sklearn.decomposition import PCA, IncrementalPCA, KernelPCA
-from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.manifold import MDS, TSNE, Isomap, LocallyLinearEmbedding
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import GridSearchCV, train_test_split
+from sklearn.pipeline import Pipeline
 
 np.random.seed(4)
 m = 60
@@ -54,6 +58,7 @@ cumsum = np.cumsum(pca.explained_variance_ratio_)
 d = np.argmax(cumsum >= 0.95) * 1
 print(d)
 
+
 pca = PCA(n_components=0.95)
 X_reduced = pca.fit_transform(X_train)
 print(pca.n_components_)
@@ -89,3 +94,39 @@ X_reduced = rbf_pca.fit_transform(X)
 lin_pca = KernelPCA(n_components=2, kernel="linear", fit_inverse_transform=True)
 rbf_pca = KernelPCA(n_components=2, kernel="rbf", gamma=0.443, fit_inverse_transform=True)
 sig_pca = KernelPCA(n_components=2, kernel="sigmoid", gamma=0.001, fit_inverse_transform=True)
+
+y = t > 6.9
+
+clf = Pipeline([
+    ("kpca", KernelPCA(n_components=2)),
+    ("log_reg", LogisticRegression()),
+])
+
+param_grid = [{
+    "kpca__gamma": np.linspace(0.03, 0.05, 10),
+    "kpca__kernel": ["rbf", "sigmoid"],
+}]
+
+grid_search = GridSearchCV(clf, param_grid, cv=3)
+grid_search.fit(X, y)
+print(grid_search.best_params_)
+print(grid_search.best_estimator_)
+
+rbf_pca = KernelPCA(n_components=2, kernel="rbf", gamma=0.0443, fit_inverse_transform=True)     #kPCA로 2D로 만든것과 특성맵을 사용하여 무한차원으로 매핑한 뒤 2D로 투영한것은 같다.
+X_reduced = rbf_pca.fit_transform(X)
+X_preimage = rbf_pca.inverse_transform(X_reduced)
+
+print(mean_squared_error(X, X_preimage))
+
+
+lle = LocallyLinearEmbedding(n_components=2, n_neighbors=10)
+X_reduced = lle.fit_transform(X)
+
+mds = MDS(n_components=2)
+X_reduced_mds = mds.fit_transform(X)
+
+isomap = Isomap(n_components=2)
+X_reduced_isomap = isomap.fit_transform(X)
+
+tsne = TSNE(n_components=2)
+X_reduced_tsne = tsne.fit_transform(X)
