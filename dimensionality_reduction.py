@@ -2,11 +2,11 @@ import numpy as np
 from sklearn.datasets import fetch_openml, make_swiss_roll
 from sklearn.decomposition import PCA, IncrementalPCA, KernelPCA
 from sklearn.linear_model import LogisticRegression
-from sklearn.manifold import MDS, Isomap, LocallyLinearEmbedding
+from sklearn.manifold import MDS, TSNE, Isomap, LocallyLinearEmbedding
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.model_selection import train_test_split
+
 np.random.seed(4)
 m = 60
 w1, w2 = 0.1, 0.3
@@ -127,3 +127,6 @@ X_reduced_mds = mds.fit_transform(X)
 
 isomap = Isomap(n_components=2)
 X_reduced_isomap = isomap.fit_transform(X)
+
+tsne = TSNE(n_components=2)
+X_reduced_tsne = tsne.fit_transform(X)
