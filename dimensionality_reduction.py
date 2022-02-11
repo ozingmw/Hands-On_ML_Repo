@@ -6,7 +6,7 @@ from sklearn.manifold import LocallyLinearEmbedding
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
-
+from sklearn.model_selection import train_test_split
 np.random.seed(4)
 m = 60
 w1, w2 = 0.1, 0.3
