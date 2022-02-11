@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.datasets import fetch_openml, make_swiss_roll
 from sklearn.decomposition import PCA, IncrementalPCA, KernelPCA
 from sklearn.linear_model import LogisticRegression
-from sklearn.manifold import LocallyLinearEmbedding
+from sklearn.manifold import MDS, Isomap, LocallyLinearEmbedding
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.pipeline import Pipeline
@@ -121,3 +121,9 @@ print(mean_squared_error(X, X_preimage))
 
 lle = LocallyLinearEmbedding(n_components=2, n_neighbors=10)
 X_reduced = lle.fit_transform(X)
+
+mds = MDS(n_components=2)
+X_reduced_mds = mds.fit_transform(X)
+
+isomap = Isomap(n_components=2)
+X_reduced_isomap = isomap.fit_transform(X)
