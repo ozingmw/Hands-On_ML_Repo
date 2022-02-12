@@ -4,12 +4,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from sklearn.pipeline import Pipeline
-from sklearn.decomposition import PCA
+# from sklearn.decomposition import PCA
 from sklearn.datasets import fetch_openml
-from sklearn.manifold import TSNE, LocallyLinearEmbedding, MDS       #같은 pca이므로 먹통됨
+# from sklearn.manifold import TSNE, LocallyLinearEmbedding, MDS       #같은 pca이므로 먹통됨
 from sklearn.preprocessing import MinMaxScaler
 from matplotlib.offsetbox import AnnotationBbox, OffsetImage
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+
+
 
 mnist = fetch_openml('mnist_784', version=1)
 X = mnist["data"][:10000]
