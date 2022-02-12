@@ -30,3 +30,4 @@ y_pred = kmeans.fit_predict(X)
 
 print(y_pred)
 print(y_pred is kmeans.labels_)
+print(kmeans.cluster_centers_)
