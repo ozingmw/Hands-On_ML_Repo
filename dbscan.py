@@ -2,7 +2,7 @@ import numpy as np
 from sklearn.cluster import DBSCAN, AgglomerativeClustering
 # from sklearn.cluster import SpectralClustering
 from sklearn.datasets import make_blobs, make_moons
-from sklearn.mixture import GaussianMixture
+from sklearn.mixture import BayesianGaussianMixture, GaussianMixture
 from sklearn.neighbors import KNeighborsClassifier
 
 
@@ -84,3 +84,11 @@ for k in range(1, 11):
 
 print(best_k)
 
+
+bgm = BayesianGaussianMixture(n_components=10, n_init=10)
+bgm.fit(X)
+print(np.round(bgm.weights_, 2))
+
+X_moons, y_moons = make_moons(n_samples=1000, noise=0.05)
+bgm = BayesianGaussianMixture(n_components=10, n_init=10)
+bgm.fit(X_moons)
