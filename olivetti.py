@@ -41,7 +41,7 @@ print(pca.n_components_)
 range_per_k = range(100, 140, 2)
 kmeans_per_k = [KMeans(n_clusters=k, random_state=42).fit(X_train_pca) for k in range_per_k]
 
-이니셔로 엘보 지점 확인 불가능
+# 이니셔로 엘보 지점 확인 불가능
 inertias = [model.inertia_ for model in kmeans_per_k]
 plt.figure(figsize=(16,12))
 plt.plot(range_per_k, inertias, "bo-")
