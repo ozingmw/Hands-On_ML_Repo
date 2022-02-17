@@ -120,7 +120,6 @@
                     O(n^2.4 ~ n^3) - 특성 수(정규방정식)
                 속도 빠름
 
-
         SGDRegressor(max_iter=최대 에포크(1000), tol=손실(1e-3), eta0=학습률(0.1), penalty=규제(l2))
             확률적 경사 하강법
                 계산 복잡도
@@ -148,15 +147,83 @@
                 최대한 폭이 넓은 도로 찾기
                 스케일링 필요
                 하드 마진 분류(이상치에 민감) / 소프트 마진 분류
+            
+            선형 SVM
+                시간 복잡도
+                    O(m * n)
+                
+                LinearSVC(C=폭 넓이(1, 크면 좁아짐 -> 과대적합이면 C감소))
+                    선형 SVM모델
+                        probability=True 일때 predict_proba()사용 가능
+                    (커널중 사용 1번)
+                    (SVC(kernel="linear) 보다 LinearSVC가 더 빠름 (특히 훈련 세트가 아주 크거나 특성 수가 많을 때))
+                
+                SCV(kernel="linear", C=1)
+                    선형 커널 사용
+                    
+                SGDClassifier(alpha=1/(m*C))
+                    확률적 경사 하강법 적용
+                        LinearSVC보다 느리지만 데이터셋이 크거나 온라인 학습으로 분류할때 사용
 
-            LinearSVC(C=폭 넓이(1, 크면 좁아짐 -> 과대적합이면 C감소))
-                선형 SVM모델
-                    probability=True 일때 predict_proba()사용 가능
-            SCV(kernel="linear", C=1)
-                선형 커널 사용
-            SGDClassifier(alpha=1/(m*C))
-                확률적 경사 하강법 적용
-                    LinearSVC보다 느리지만 데이터셋이 크거나 온라인 학습으로 분류할때 사용
+            비선형 SVM
+                PolynomialFeature(degree=n) 이후 StandardScaler()로 정규화 후 LinearSVC()
+                낮은 차수 다항식은 복잡한 데이터셋을 잘 표현하지 못하고 높은 차수 다항식은 모델을 느리게함
+                -> 커널 트릭(실제로 특성을 추가하지 않지만 추가한 척)
+                
+                SVC(kernel="poly", degree=3, coef0=1, C=5)
+                    시간 복잡도
+                        O(m^2 * n) ~ O(m^3 * n)
+                    coef0은 모델이 높은 차수와 낮은 차수에 얼마나 영향을 받을지 조절,
+                    1보다 작은 값과 1보다 큰 값의 차이가 큼
+                    과대적합이라면 차수를 줄이기
+                
+                SVC(kernel="rbf", gamma=5, C=0.001)
+                    가우시안 RBF 커널
+                        과대적합일 경우 gamma감소, C감소
+                        (훈련 세트가 크지 않다면 2번)
+
+            SVM 회귀
+                LinearSVR(epsilon=마진(1.5, 도로의 폭))
+                    도로안에 최대한 많은 데이터가 들어가게
+                    LinearSVC의 회귀버전
+                    데이터셋에 비례하여 선형적으로 증가
+
+                SVR(kernel="poly", degree=2, C=100, epsilon=0.1)
+                    SVC의 회귀버전
+                    데이터셋이 커지면 훨씬 느려짐
+
+            이론
+                하드 마진 = 오류 하나도 없이
+                소프트 마진 = 제한적인 오류 포함하여 가능한 마진 크게(도로의 폭)
+                둘다 선형적인 제약 조건이 있어 콰드라틱 프로그래밍문제
+                쌍대 문제
+
+
+
+            결정 트리
+                DecisionTreeClassifier(max_depth=결정 경계(2))
+                    훈련시키기 위해 CART알고리즘 사용, 그리디 알고리즘, NP-완전 문제로 최적의 트리 찾기 어려움
+                    시간 복잡도
+                        O(log2(m)) -> 특성 수와 무관
+                    훈련 복잡도
+                        O(n * m log2(m))
+                        훈련 세트가 수천개 이하 정도로 작을 경우 presort=True 하면 빨라짐
+                    지니 불순도 or 엔트로피
+                        criterion 기본 = 지니 불순도, "entropy" = 엔트로피
+                            큰 차이 없음, 지니 불순도가 조금 더 빠름, 엔트로피가 조금 더 균형잡힘
+                    max_depth 줄이면 과대적합 감소
+                    
+                    매개변수
+                        min_sample_split - 분할되기 위해 노드가 가져야 하는 최소 샘플 수
+                        min_sample_leaf - 리프 노드가 가지고 있어야 할 최소 샘플 수
+                        min_weight_fraction_leaf - min_sample_leaf와 같지만 가중치가 부여된 전체 샘플 수에서의 비율
+                        max_leaf_nodes - 리프 노드 최대 수
+                        max_features - 각 노드에서 분할에 사용할 특성의 최대 수
+
+                        min시작하는 매개변수 증가, max시작하는 매개변수 감소시키면 규제가 커짐
+                
+                DecisionTreeRegressor()
+
 
 
 
