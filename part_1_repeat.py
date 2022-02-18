@@ -147,6 +147,7 @@
                 최대한 폭이 넓은 도로 찾기
                 스케일링 필요
                 하드 마진 분류(이상치에 민감) / 소프트 마진 분류
+                계단모양으로 결정 경계를 만듬 -> 회전에 민감함 -> 데이터를 좋은 방향으로 회전시키는 PCA기법 사용
             
             선형 SVM
                 시간 복잡도
@@ -198,8 +199,6 @@
                 둘다 선형적인 제약 조건이 있어 콰드라틱 프로그래밍문제
                 쌍대 문제
 
-
-
             결정 트리
                 DecisionTreeClassifier(max_depth=결정 경계(2))
                     훈련시키기 위해 CART알고리즘 사용, 그리디 알고리즘, NP-완전 문제로 최적의 트리 찾기 어려움
@@ -223,11 +222,73 @@
                         min시작하는 매개변수 증가, max시작하는 매개변수 감소시키면 규제가 커짐
                 
                 DecisionTreeRegressor()
+                    회귀 방식으로 클래스를 예측하는 대신 값을 예측함
 
+        앙상블 학습
+            투표
+                VotingClassifier(
+                    estimators=[("model_name", clf), ("model_name", clf), ...],
+                    voting=직접투표, 간접투표("hard", "soft", 각 분류기가 확률을 내서 예측)
+                )
+                    soft방식으로 했을 때 각 분류기가 predict_proba() 메서드가 있어야함(확률 계싼을 할 수 있어야함)
+                    모든 분류기가 독립적일수록 최고의 성능을 발휘함
 
+            배깅, 페이스팅
+                BaggingClassifier(
+                    DecisionTreeClassifier(), n_estimators=생성할 트리의 개수(500),
+                    max_samples=100, bootstrap=True, n_jobs=-1
+                )
+                    bootstrap = True일 경우 배깅, False일 경우 페이스팅
+                    배깅 = 훈련 세트를 중복 허용하여 여러개로 나눠서 훈련
+                    페이스팅 = 중복 미허용
+                    predict_proba있으면 간접 투표 방식 사용
+                    편향은 비슷하지만 분산은 줄어듬
+                    배깅이 페이스팅보다 편향이 좀 더 높음, 분산 낮음 -> 배깅이 좀더 나은 모델을 만들지만 여유가 있다면 그냥 교차검증
 
+                    배깅을 할 때 훈련 세트를 중복으로 하여 약 63%정도만 사용하여 사용하지 않은 37%정도를 검증세트로 사용함(매 훈련마다 선택되지 않은 샘플은 다름), 테스트 세트와 점수 비슷함
+                    -> oob_score=True 하면 oob평가를 사용하여 model.oob_score_으로 불러올수 있음
 
+                    랜덤 패치와 서브스페이스
+                        특성 샘플링
+                        이미지와 같은 매우 고차원의 데이터셋을 다룰 때 유용
+                        모든 샘플과 특성을 샘플링하는걸 랜덤 패치 방식, 특성을 샘플링하는걸 랜덤 서브스페이스 방식
+                        랜덤 패치 = bootstrap=False, max_samples=1.0
+                        랜덤 서브스페이스 = bootstrap_features=True, max_sample=1.0보다 낮게설정
 
+            랜덤 포레스트
+                RandomForestClassifier(n_estimators=500, max_leaf_nodes=16, n_jobs=-1) (, RandomForestRegressor)
+                    DecisionTreeClassifier의 매개변수와 앙상블 자체를 제어하는데 필요한 BaggingClassifier의 매개변수를 모두 가지고 있음
+                        (BaggingClassifier(DecisionTreeClassifier(max_features="sqrt, maax_leaf_nodes=16, n_estimators=500))와 유사함)
+                
+                ExtraTreesClassifier (, ExtraTreesRegressor)
+                    익스트림 랜덤 트리, 엑스트라 트리
+                    무작위로 특성의 서브셋을 만들어 분할에 사용, 최적의 임곘값을 찾는 대신 후보 특성을 사용해 무작위로 분할한 다음 그중에서 최상의 분할을 선택
+                    편향이 늘어나지만 분산을 낮춤
+                    일반적으로 랜덤 포레스트보다 엑스트라 트리가 훨씬 빠름 (그냥 교차검증 후 그리드 탐색으로 하이퍼파라미터 튜닝)
+
+                특성 중요도
+                    for name, score in zip(data["feature_names"], model.feature_importances_)
+
+            부스팅
+                에이다부스트
+                    AdaBoostClassifier(
+                        DecisionTreeClassifier(max_depth=1), n_estimators=200,
+                        algorithm="SAMME.R", learning_rate=0.5
+                    )
+                        예측을 한 뒤 잘못 분류된 샘플으 가중치를 상대적으로 높인 상대로 다음 분류기에 넘김
+                        algorithm의 SAMME은 에이다부스트의 다중 클래스 버전, predict_proba()있으면 확률 추정 가능
+
+                그레디언트 부스팅
+                    GradientBoostingRegressor(max_depth=2, n_estimators=3, learning_rate=1.0)
+                        앙상블에 이전까지의 오차를 보정하도록함
+                        샘플의 가중치를 추가하는 에이다부스트와 달리 이전 예측기가 만든 잔여 오차에 새로운 예측기를 학습시킴
+
+                        조기 종료 기법 = staged_predict() (p.265 ~ p.266)
+                        subsample이용하여 훈련 샘플 비율 정할 수 있음 -> 편향은 높아지고 분산은 낮아짐, 훈련 속도 높임(확률적 그레디언트 부스팅)
+                        (-> 외부라이브러리 XGBoost)
+
+                스태킹
+                    직접투표같은 예측을 취합하여 결과를 내는것 대신 취합하는 모델을 만드는 것
 
     모델 규제
         Ridge(alpha=규제(1e-3, 0이면 선형회귀와 같아짐, 크면 평균을 지나는 수평선처럼 됨), solver=계산 방법("cholesky", 정규방정식))
@@ -258,8 +319,7 @@
         RandomizedSearchCV(model, params, cv=5)
             랜덤 탐색
 
-                
-
+        
 
 
 
