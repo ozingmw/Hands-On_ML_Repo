@@ -1,4 +1,9 @@
 import pandas as pd
+from sklearn.impute import KNNImputer, SimpleImputer
+from sklearn.linear_model import LinearRegression
+
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import OneHotEncoder
 
 
 train_data = pd.read_csv("./datasets/titanic/train.csv")
@@ -13,8 +18,18 @@ print(train_data.describe())
 # Parch: 함께 탑승한 자녀, 부모의 수. / Ticket: 티켓 아이디
 # Fare: 티켓 요금 (파운드) / Cabin: 객실 번호 / Embarked: 승객이 탑승한 곳. C(Cherbourg), Q(Queenstown), S(Southampton)
 
-train_data = train_data.set_index("PassengerId")
-test_data = test_data.set_index("PassengerId")
+# 사용 할 특성 : Pclass, Sex, Age, SibSp + Parch, Fare, Embarked
+# 결측치 있는 특성 : Age, Embarked
 
-print(train_data.head(10))
-print(test_data.head())
+train_data["Family"] = train_data["SibSp"] + train_data["Parch"]
+train_data = train_data[["Pclass", "Sex", "Age", "Family", "Fare", "Embarked"]]
+
+# Age 결측치 제거
+imputer = KNNImputer()
+train_data["Age"] = imputer.fit_transform(train_data[["Age", "Pclass"]])
+
+# Embarked 결측치 제거
+imputer = SimpleImputer(strategy="most_frequent")
+train_data["Embarked"] = imputer.fit_transform(train_data[["Embarked"]])
+ohe = OneHotEncoder()
+temp = ohe.fit_transform(train_data[["Embarked"]])

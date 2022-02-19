@@ -84,6 +84,9 @@
             test_idx_s = csv.loc[test_idx]
             계층 샘플링 - 비율별로 다르게 샘플링
 
+        train_test_split(X, y, test_size=0.2)
+            X_train, y_train, X_test, y_test 분리
+
         imputer = SimpleImputer(strategy="median")
         imputer.fit_transform(csv)
             fit으로 imputer를 조정하고 transform으로 csv를 imputer에 맞게 변경함(strategy="median" - 숫자, "most_frequent" - 숫자, 문자)
