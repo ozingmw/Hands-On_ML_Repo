@@ -1,4 +1,3 @@
-'''
 머신러닝 프로젝트 체크리스트
     1. 문제를 정의하고 큰 그림을 그립니다.
     2. 데이터 수집
@@ -43,11 +42,6 @@
             f1 score
 
 
-
-
-
-
-
     데이터 시각화
         csv.hist()
         plt.show()
@@ -82,10 +76,6 @@
                 두 곡선이 수평한 구간을 이루고 높은 오차에서 가까이 근접 = 과소적합 -> 더 복잡한 모델 사용 or 더 나은 특성 선택(샘플 추가 의미 없음)
                 두 곡선이 수평한 상태로 사이에 공간이 있다 = 과대적합 -> 더 큰 훈련 세트(점점 두 선이 가까워 질때까지)
             
-
-
-
-
     
     데이터 준비
         sss = StratifiedShuffleSplit(n_splits=1, test_size=0.2, random_state=42)
@@ -93,6 +83,9 @@
             train_idx_s = csv.loc[train_idx]
             test_idx_s = csv.loc[test_idx]
             계층 샘플링 - 비율별로 다르게 샘플링
+
+        train_test_split(X, y, test_size=0.2)
+            X_train, y_train, X_test, y_test 분리
 
         imputer = SimpleImputer(strategy="median")
         imputer.fit_transform(csv)
@@ -108,7 +101,55 @@
         sklearn.pipline.Pipeline
             파이프라인(묶어서 관리)
 
+        차원 축소
+            차원 축소를 하면 일부 정보가 유실됨, 따라서 훈련 속도가 빨라질 수 있지만 성능이 감소됨, 파이프라인이 복잡해져 유지보수가 어려워짐
+            잡음이나 불필요한 정보를 걸러낼 수 있으므로 성능이 높아질 수도 있음
+            보통은 훈련속도만 빨라짐
+            시각화에도 유용함
+            차원이 클수록 과대적합 위험이 큼
 
+            PCA
+                분산을 최대한 보존하는 성분 = 주성분
+                첫번째 주성분의 수직 = 두번째, 첫번째와 두번째가 이루는 평면의 수직 = 세번째
+                n개의 주성분으로 이루는 n차원으로 축소시킴
+
+                PCA(n_components=2)
+                    자동으로 데이터를 중앙으로 정렬
+                    PCA.explained_variance_ratio_ = 주성분의 설명된 분산의 비율(80%가 첫번째 PC에 놓여있음, ...)
+            
+                PCA(n_components=0.95)
+                    보존하려는 분산의 비율
+                    PCA.n_components_ = 95%에 대한 차원 수 (mnist 154차원)
+
+                PCA.inverse_transform(X_reduced)
+                    차원 복원
+                    데이터 조금 변경 됨
+
+            랜덤 PCA
+                PCA(n_components=0.95, svd_solver="randomized")
+                        차원이 샘플수보다 많이 작으면 SVD방식보다 훨씬 빠름
+
+            점진적 PCA
+                inc_pca = IncrementalPCA(n_components=154)
+                for X_batch in np.array_split(X_train, 100):
+                    inc_pca.partial_fit(X_batch)
+                X_reduced = inc_pca.transform(X_train)
+
+                memmap이용하여 마찬가지로 메모리 부족 문제 해결 가능
+
+            커널 PCA
+                KernelPCA(n_components=2, kernel="rbf", gamma=0.04)
+                커널 선택을 해야하기 때문에 gridsearch 이용하여 파라미터 찾기
+                KernelPCA, LogisticRegression을 파이프라인으로 만들고 파라미터를 kernelPCA에서 rbf,sigmoid, linear등 설정하여 찾는다
+
+                fit_inverse_transform=True로 하면 재구성 가능(PCA.inverse_transform())
+                이후 mean_squared_error(X, X_preimage)하면 재구성 오차 계산
+            
+            LLE
+                LocallyLinearEmbedding(n_components=2, n_neighbors=15)
+                    대량의 데이터셋은 힘듬
+            
+            랜덤 투영, 다차원 스케일링, Isomap, t-SNE, 선형 판별 분석
 
 
     모델
@@ -290,6 +331,91 @@
                 스태킹
                     직접투표같은 예측을 취합하여 결과를 내는것 대신 취합하는 모델을 만드는 것
 
+
+        KMeans
+            KMeans(n_clusters=5)
+                KMeans.fit_predict(X) 이용하여 예측
+                y_pred == KMeans.labels_
+                KMeans.cluster_centers_으로 센트로이드 위치
+                KMeans.transform(X)하면 각각 센트로이드까지 거리 확인
+                init=(좌표) 로 센트로이드 초기화
+                n_init=10 으로 랜덤 초기화 횟수
+                KMeans.inertia_로 이너셔 점수 확인
+
+            알고리즘
+                랜덤하게 센트로이드를 설정한 후 샘플에 레이블을 할당시킴
+                센트로이드를 업데이트 한 후 다시 레이블 할당, 반복
+                변하지 않을때까지 반복
+                지역 최저점에 멈출 가능성 있음
+
+            MiniBatchKMeans(n_clusters=5)
+                미니배치로 훈련
+
+            최적의 클러스터 개수 찾기
+                클러스터 개수마다 이너셔 값 그래프를 그려서 급격하게 내려가다가 천천히 내려가게 되는 지점을 엘보라고함, 그 지점이 최적이라고 생각할 수 있음
+                -> 믿음직한 방법이 아님 -> 실루엣 점수
+                silhouette_scores = [silhouette_score(X, model.labels_) for model in kmeans_per_k[1:]]
+                좀더 확실하게 실루엣 다이어그램까지 본 후 정하기
+
+                그냥 그리드서치로 구해도 됨
+            
+            스케일 맞추는게 중요함
+            클러스터의 크기가 크거나 밀집도가 다르거나 원형이 아닐경우 잘 작동하지 않음 -> 가우시안 혼합 모델
+
+            준지도 학습
+                p.320 - p.322
+
+        DBSCAN
+            모든 클러스터가 충분히 밀집되어 있고 밀집되지 않는 지역과 잘 구분될 때 좋은 성능을 냄
+            predict() 메서드가 없고 fit_predict()만 제공함 -> 새로운 샘플에 대해 클러스터를 예측할 수 없음
+
+            계산 복잡도
+                O(m log m)
+
+            DBSCAN(eos=0.05, min_samples=5)
+                DBSCAN.label_에서 일부 값이 -1인 경우는 이상치로 판단함
+                핵심 샘플 인덱스 : DBSCAN.core_sample_indices_
+                핵심 샘플 자체 : DBSCAN.components_
+
+                KNeighborsClassifier(n_neighbors=50)
+                knn.fit(dbscan.components_, dbscan.labels_[dbscan.core_sample_indices_])
+
+        병합 군집, BIRCH, 평균-이동, 유사도 전파, 스펙트럼 군집
+
+        가우시안 혼합 모델
+            GaussianMixture(n_components=3, n_init=10)
+                샘플에 활성화, 업데이트 반복함
+
+                gmm.n_iter_ 반복횟수
+
+                하드 군집 gmm.predict()
+                소프트 군집 gmm.predict_proba()            
+
+                생성 모델이기 때문에 X_new, y_new = gmm.sample(n)으로 샘플 생성 가능
+            
+                gmm.score_sample(X)로 각 샘플의 밀도 구하기 
+
+            이상치 탐지
+                densities = gmm.score_samples(X)
+                density_threshold = np.percentile(densities, 4) (4%)
+                anomalies = X[densities < density_threshold]
+
+            클러스터 개수 선택
+                BIC, AIC를 최소화하는 모델 선택
+                gmm.bic(X), gmm.aic(X)
+
+        베이즈 가우시안 혼합 모델
+            BayesianGaussianMixture(n_components=10, n_init=10)
+                np.round(bgm.weights_, 2)해서 클러스터가 몇개 필요한지 보면 자동으로 정하는걸 알 수 있음
+
+        이상치 탐지, 특이치 탐지
+            PCA(inverse_transform() 메서드를 가진 다른 차원 축소 기법) - 이상치 탐지
+            Fast-MCD - 이상치 탐지
+            아이솔레이션 포레스트 - 이상치 탐지
+            LOF - 이상치 탐지
+            one-class SVM - 특이치 탐지
+
+
     모델 규제
         Ridge(alpha=규제(1e-3, 0이면 선형회귀와 같아짐, 크면 평균을 지나는 수평선처럼 됨), solver=계산 방법("cholesky", 정규방정식))
         SGDRegressor(penalty="l2")
@@ -310,21 +436,12 @@
                 매 훈련 순간 검증 오차를 구해서 검증오차가 줄어들지 않으면 강제 종료시킴
 
 
-
-
     모델 튜닝
         GridSearchCV(model, params, cv=5, scoring="")
             그리드 탐색
         
         RandomizedSearchCV(model, params, cv=5)
             랜덤 탐색
-
-        
-
-
-
-
-
 
 
     모델 평가
@@ -335,9 +452,3 @@
         score = cross_val_score(model, X_test, y_test, scoreing="", cv=10)
         np.sqrt(-score)
             k겹 교차 검증
-
-
-
-
-
-'''
