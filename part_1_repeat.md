@@ -1,4 +1,3 @@
-'''
 머신러닝 프로젝트 체크리스트
     1. 문제를 정의하고 큰 그림을 그립니다.
     2. 데이터 수집
@@ -450,6 +449,3 @@
         score = cross_val_score(model, X_test, y_test, scoreing="", cv=10)
         np.sqrt(-score)
             k겹 교차 검증
-
-
-'''
