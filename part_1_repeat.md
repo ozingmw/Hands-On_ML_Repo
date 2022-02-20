@@ -16,7 +16,7 @@
         csv.info()
             간략한 설명 및 데이터 타입, 널이 아닌 값 개수
 
-        CSV["attrib"].value_counts()
+        csv["attrib"].value_counts()
             해당 특성 값 정보
 
         csv.describe()
