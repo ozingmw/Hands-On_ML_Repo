@@ -16,7 +16,7 @@
         csv.info()
             간략한 설명 및 데이터 타입, 널이 아닌 값 개수
 
-        CSV["attrib"].value_counts()
+        csv["attrib"].value_counts()
             해당 특성 값 정보
 
         csv.describe()
@@ -85,7 +85,7 @@
             계층 샘플링 - 비율별로 다르게 샘플링
 
         train_test_split(X, y, test_size=0.2)
-            X_train, y_train, X_test, y_test 분리
+            X_train, X_test, y_train, y_test 분리
 
         imputer = SimpleImputer(strategy="median")
         imputer.fit_transform(csv)
