@@ -1,17 +1,23 @@
-from cgi import test
 import numpy as np
 import pandas as pd
+from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestClassifier
 
 from sklearn.impute import KNNImputer, SimpleImputer
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import GridSearchCV, cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.svm import SVC
 
 
+# 1차 목표 : 완성
+# 2차 목표 : 80%
+# 3차 목표 : 90%
+
+# 현재 : 
 
 train_data = pd.read_csv("./datasets/titanic/train.csv")
 test_data = pd.read_csv("./datasets/titanic/test.csv")
@@ -64,7 +70,7 @@ train_data.drop("Cabin", axis=1, inplace=True)
 # 데이터 준비
 X_train = train_data.drop("Survived", axis=1)
 y_train = train_data["Survived"]
-X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2)
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
 # 모든 특성에 스케일링?
 # scaler = StandardScaler()
@@ -72,14 +78,49 @@ X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.
 # X_val_scaled = scaler.fit_transform(X_val)
 
 # 모델
-rnd_clf = RandomForestClassifier(n_jobs=-1, random_state=42)
+# gridsearch 최적 파라미터
+rnd_clf = RandomForestClassifier(max_depth=8, min_samples_leaf=5, n_estimators=350, random_state=42, oob_score=True)
 rnd_clf.fit(X_train, y_train)
-y_pred = rnd_clf.predict(X_val)
+print(rnd_clf.oob_score_)
+print(sorted(zip(rnd_clf.feature_importances_, X_train.columns), reverse=True))
 
-# 검증
-print(cross_val_score(rnd_clf, X_train, y_train, cv=10).mean())
-print(cross_val_score(rnd_clf, X_val, y_val, cv=10).mean())
+print(accuracy_score(y_val, rnd_clf.predict(X_val)))
+
+
+# 파이프라인
+# age 결측치 제거, embarked 결측치 제거, 변경, sex숫자로 변경, cabin 변경
+
+# num_pipeline = Pipeline([
+
+# ])
+
+# class SexTransform(BaseEstimator, TransformerMixin):
+#     def __init__(self):
+#         age = self["Age"]
+#     def fit(self, X, y=None):
+#         return self
+#     def transform(self, X):
+#         return X
+
+# cat_pipeline = Pipeline([
+
+# ])
+
+
+# full_pipeline = ColumnTransformer([
+#     ("num", num_pipeline(), num_attrib),
+#     ("cat", cat_pipeline(), cat_attrib),
+# ])
+
+# rnd_clf = RandomForestClassifier(max_depth=8, min_samples_leaf=5, n_estimators=350, random_state=42, oob_score=True)
+# rnd_clf.fit(X_train, y_train)
+
+
+
+
+
+
 
 # 마무리
-# y_pred = rnd_clf.predict(X_test)
+# y_pred = rnd_clf.predict(train_data[["Pclass", "Sex", "Age", "SibSp", "Parch", "Family", "Fare", "Cabin", "Embarked"]])
 # result = pd.DataFrame(np.c_[test_data.index, y_pred], columns=["PassengerId", "Survived"]).to_csv("./datasets/titanic/titanic_result.csv", index=False)
