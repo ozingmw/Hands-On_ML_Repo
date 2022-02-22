@@ -99,10 +99,16 @@ embarked_pipeline = Pipeline([
 full_pipeline = ColumnTransformer([
     ("family", FamilyAddAttrib(), ["SibSp", "Parch"]),
     ("age", KNNImputer(), ["Age", "Pclass"]),
-    ("embarked", embarked_pipeline, ["Embarked"]),
-    ("sex", OneHotEncoder(), ["Sex"]),
-    ("cabin", CabinTransform(), ["Cabin"]),
+    # ("embarked", embarked_pipeline, ["Embarked"]),
+    ("sex", OneHotEncoder(sparse=False), ["Sex"]),
+    # ("cabin", CabinTransform(), ["Cabin"]),
 ])
+
+train_data = pd.read_csv("./datasets/titanic/train.csv")
+train_data = train_data[["Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare"]]
+X_train = train_data.drop("Survived", axis=1)
+y_train = train_data["Survived"]
+X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
 X_train = full_pipeline.fit_transform(X_train)
 
@@ -110,9 +116,9 @@ rnd_clf = RandomForestClassifier(max_depth=8, min_samples_leaf=5, n_estimators=3
 rnd_clf.fit(X_train, y_train)
 
 print(rnd_clf.oob_score_)
-print(sorted(zip(rnd_clf.feature_importances_, X_train.columns), reverse=True))
+print(sorted(zip(rnd_clf.feature_importances_, train_data.columns[1:]), reverse=True))
 
-print(accuracy_score(y_val, rnd_clf.predict(X_val)))
+# print(accuracy_score(y_val, rnd_clf.predict(X_val)))
 
 
 
