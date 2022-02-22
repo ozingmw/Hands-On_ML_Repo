@@ -9,8 +9,8 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import GridSearchCV, cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.svm import SVC
+from titanic_pipeline import CabinTransform, FamilyAddAttrib
 
 
 # 1차 목표 : 완성
@@ -90,33 +90,29 @@ print(accuracy_score(y_val, rnd_clf.predict(X_val)))
 # 파이프라인
 # age 결측치 제거, embarked 결측치 제거, 변경, sex숫자로 변경, cabin 변경
 
-# num_pipeline = Pipeline([
 
-# ])
+embarked_pipeline = Pipeline([
+    ("imputer", SimpleImputer(strategy="most_frequent")),
+    ("ohe", OneHotEncoder(sparse=False)),
+])
 
-# class SexTransform(BaseEstimator, TransformerMixin):
-#     def __init__(self):
-#         age = self["Age"]
-#     def fit(self, X, y=None):
-#         return self
-#     def transform(self, X):
-#         return X
+full_pipeline = ColumnTransformer([
+    ("family", FamilyAddAttrib(), ["SibSp", "Parch"]),
+    ("age", KNNImputer(), ["Age", "Pclass"]),
+    ("embarked", embarked_pipeline, ["Embarked"]),
+    ("sex", OneHotEncoder(), ["Sex"]),
+    ("cabin", CabinTransform(), ["Cabin"]),
+])
 
-# cat_pipeline = Pipeline([
+X_train = full_pipeline.fit_transform(X_train)
 
-# ])
+rnd_clf = RandomForestClassifier(max_depth=8, min_samples_leaf=5, n_estimators=350, random_state=42, oob_score=True)
+rnd_clf.fit(X_train, y_train)
 
+print(rnd_clf.oob_score_)
+print(sorted(zip(rnd_clf.feature_importances_, X_train.columns), reverse=True))
 
-# full_pipeline = ColumnTransformer([
-#     ("num", num_pipeline(), num_attrib),
-#     ("cat", cat_pipeline(), cat_attrib),
-# ])
-
-# rnd_clf = RandomForestClassifier(max_depth=8, min_samples_leaf=5, n_estimators=350, random_state=42, oob_score=True)
-# rnd_clf.fit(X_train, y_train)
-
-
-
+print(accuracy_score(y_val, rnd_clf.predict(X_val)))
 
 
 
