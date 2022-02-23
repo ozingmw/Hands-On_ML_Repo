@@ -8,18 +8,8 @@ class FamilyAddAttrib(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         return self
     def transform(self, X):
-        return np.c_[X, X["SibSp"] + X["Parch"]]
-
-class AgeTransform(BaseEstimator, TransformerMixin):
-    def __init__(self):
-        self = self
-    def fit(self, X, y=None):
-        return self
-    def transform(self, X):
-        imputer = KNNImputer()
-        imputer.fit_transform(X[["Age", "Pclass"]])
-        
-        return self
+        X["Family"] = X["SibSp"] + X["Parch"]
+        return X
 
 class CabinTransform(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
