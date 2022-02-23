@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from sklearn.compose import ColumnTransformer
+from sklearn.compose import ColumnTransformer, make_column_selector
 from sklearn.ensemble import RandomForestClassifier
 
 from sklearn.impute import KNNImputer, SimpleImputer
@@ -36,6 +36,7 @@ print(train_data.describe())
 
 train_data["Family"] = train_data["SibSp"] + train_data["Parch"]
 train_data = train_data[["Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Family", "Fare", "Cabin", "Embarked"]]
+
 
 # Age 결측치 제거
 imputer = KNNImputer()
@@ -91,7 +92,8 @@ print(accuracy_score(y_val, rnd_clf.predict(X_val)))
 # age 결측치 제거, embarked 결측치 제거, 변경, sex숫자로 변경, cabin 변경
 
 
-embarked_pipeline = Pipeline([
+embarked_cabin_pipeline = Pipeline([
+    ("cabin", CabinTransform()),
     ("imputer", SimpleImputer(strategy="most_frequent")),
     ("ohe", OneHotEncoder(sparse=False)),
 ])
@@ -99,30 +101,35 @@ embarked_pipeline = Pipeline([
 full_pipeline = ColumnTransformer([
     ("family", FamilyAddAttrib(), ["SibSp", "Parch"]),
     ("age", KNNImputer(), ["Age", "Pclass"]),
-    # ("embarked", embarked_pipeline, ["Embarked"]),
     ("sex", OneHotEncoder(sparse=False), ["Sex"]),
-    # ("cabin", CabinTransform(), ["Cabin"]),
+    ("scaler", StandardScaler(), ["Pclass"]),
+    ("embarked", embarked_cabin_pipeline, ["Embarked", "Cabin"]),
 ])
 
+attributes = ["Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare", "Cabin", "Embarked"]
 train_data = pd.read_csv("./datasets/titanic/train.csv")
-train_data = train_data[["Survived", "Pclass", "Sex", "Age", "SibSp", "Parch", "Fare"]]
+train_data = train_data[attributes]
 X_train = train_data.drop("Survived", axis=1)
 y_train = train_data["Survived"]
 X_train, X_val, y_train, y_val = train_test_split(X_train, y_train, test_size=0.2, random_state=42)
 
+print(X_train.isnull().sum())
+
 X_train = full_pipeline.fit_transform(X_train)
+X_val = full_pipeline.transform(X_val)
+
+print(np.any(np.isnan(X_train)))
+# 왜 fit_transform 이후에 nan이 생기는지 의문
+# Pclass만 scaler 하면 되고, Age 하면 nan 생김
+# dataframe에서 fit_transform 이후 ndarray로 바뀜
+
 
 rnd_clf = RandomForestClassifier(max_depth=8, min_samples_leaf=5, n_estimators=350, random_state=42, oob_score=True)
 rnd_clf.fit(X_train, y_train)
-
 print(rnd_clf.oob_score_)
-print(sorted(zip(rnd_clf.feature_importances_, train_data.columns[1:]), reverse=True))
-
-# print(accuracy_score(y_val, rnd_clf.predict(X_val)))
-
-
-
+print(accuracy_score(y_val, rnd_clf.predict(X_val)))
 
 # 마무리
-# y_pred = rnd_clf.predict(train_data[["Pclass", "Sex", "Age", "SibSp", "Parch", "Family", "Fare", "Cabin", "Embarked"]])
-# result = pd.DataFrame(np.c_[test_data.index, y_pred], columns=["PassengerId", "Survived"]).to_csv("./datasets/titanic/titanic_result.csv", index=False)
+X_test = test_data[attributes[1:]]
+y_pred = rnd_clf.predict(full_pipeline.transform(X_test))
+result = pd.DataFrame(np.c_[test_data["PassengerId"], y_pred], columns=["PassengerId", "Survived"]).to_csv("./datasets/titanic/titanic_result.csv", index=False)
