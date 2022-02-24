@@ -102,7 +102,6 @@ full_pipeline = ColumnTransformer([
     ("family", FamilyAddAttrib(), ["SibSp", "Parch"]),
     ("age", KNNImputer(), ["Age", "Pclass"]),
     ("sex", OneHotEncoder(sparse=False), ["Sex"]),
-    ("scaler", StandardScaler(), ["Pclass"]),
     ("embarked", embarked_cabin_pipeline, ["Embarked", "Cabin"]),
 ])
 
